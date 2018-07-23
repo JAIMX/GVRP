@@ -6,12 +6,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.xml.crypto.dsig.spec.XSLTTransformParameterSpec;
 
@@ -22,13 +24,16 @@ import org.apache.poi.ss.usermodel.Row;
 
 public class GVRP {
 
-    public int time0;
+    public int time0,numOfDemand;
     public List<vehicle> vehicleList;
     public List<Node> nodeList;
     public Map<Integer,Edge> edgeSet;
+    public Set<Integer> preprocessRecord;
     
     public double weightMax,volumeMax;
     public int distanceMax;
+    
+    public Map<Integer,Integer> nearestRechargeStation; //demandIndex->edgeIndex
     
 
     public class vehicle {
@@ -52,6 +57,9 @@ public class GVRP {
         vehicleList=new ArrayList<>();
         nodeList=new ArrayList<>();
         edgeSet=new HashMap<>();
+        preprocessRecord=new HashSet<>();
+        numOfDemand=0;
+        nearestRechargeStation=new HashMap<>();
         
         readNodeFile(nodeFileName);
         readVehicleTypeFile(vehicleTypeFileName);
@@ -95,11 +103,13 @@ public class GVRP {
                 node.t1 = 0;
                 cell = cellIterator.next();
                 node.t2 = (int) cell.getNumericCellValue() * 24 * 60 - time0;
+                
 
             }
 
             // demand
             if (type == 2) {
+                numOfDemand++;
                 cell = cellIterator.next();
                 node.longitude = cell.getNumericCellValue();
                 cell = cellIterator.next();
@@ -117,6 +127,7 @@ public class GVRP {
 
                 cell = cellIterator.next();
                 node.t2 = (int) (cell.getNumericCellValue() * 24 * 60 - time0);
+                
 
             }
 
@@ -126,6 +137,9 @@ public class GVRP {
                 node.longitude = cell.getNumericCellValue();
                 cell = cellIterator.next();
                 node.latitude = cell.getNumericCellValue();
+                
+                node.t1=nodeList.get(0).t1;
+                node.t2=nodeList.get(0).t2;
             }
             
             nodeList.add(node);
@@ -202,19 +216,106 @@ public class GVRP {
             edge.spendTime=Integer.parseInt(result[4]);
             edge.index=index;
             
-//            System.out.println(edge.u+"->"+edge.v+" "+edge.distance+" "+edge.spendTime);
             edgeSet.put(index, edge);
         }
+        
+        //calculate nearestRechargeStation
+        Map<Integer,Integer> nearestRecord=new HashMap<>();
+        for(int i=0;i<numOfDemand;i++){
+            nearestRecord.put(i+1, Integer.MAX_VALUE);
+        }
+        
+        for(int edgeIndex:edgeSet.keySet()){
+            Edge edge=edgeSet.get(edgeIndex);
+            Node u=nodeList.get(edge.u);
+            Node v=nodeList.get(edge.v);
+            
+            if(u.typeIndex==2&&v.typeIndex!=2){
+                if(edge.distance<nearestRecord.get(edge.u)){
+                    nearestRechargeStation.put(edge.u, edgeIndex);
+                    nearestRecord.put(edge.u,edge.distance);
+                }
+            }
+        }
+        
+        
+        
         
     }
     
     public void preprocess(){
+        
+        Map<Integer,Integer> distanceToDepot=new HashMap<>();
+        for(int edgeIndex:edgeSet.keySet()){
+            Edge edge=edgeSet.get(edgeIndex);
+            if(edge.u==0){
+                distanceToDepot.put(edge.v, edge.spendTime);
+            }
+        }
+        
+        
+        
+        for(int edgeIndex:edgeSet.keySet()){
+            Edge edge=edgeSet.get(edgeIndex);
+            
+
+            Node u=nodeList.get(edge.u);
+            Node v=nodeList.get(edge.v);
+            
+            //consider the situation edge(u,v) exceed maxmal weight or volume (6096/1211100)
+            if(u.typeIndex==2&&v.typeIndex==2){
+                if((u.weight+v.weight>weightMax)||(u.volume+v.volume>volumeMax)){
+                    preprocessRecord.add(edgeIndex);
+                    continue;
+                }
+            }
+            
+            //consider edge(u,v) violate time window situations(428131/1211100)
+            if(u.typeIndex!=1){
+                if(u.t1+30+edge.spendTime>v.t2){
+                    preprocessRecord.add(edgeIndex);
+                    continue;
+                }
+            }
+            
+            //consider the situation after passing by edge(u,v), it impossible to comeback to depot on time(no use)
+//            if(u.typeIndex!=1&&v.typeIndex!=1){
+//                if(u.t1+30+edge.spendTime+30+distanceToDepot.get(edge.v)>nodeList.get(0).t2){
+//                    preprocessRecord.add(edgeIndex);
+//                    continue;
+//                }
+//            }
+            
+            //consider recharge constraints(no use)
+//            if(u.typeIndex==2&&v.typeIndex==2){
+//                Edge edge1=edgeSet.get(nearestRechargeStation.get(edge.u));
+//                Edge edge2=edgeSet.get(nearestRechargeStation.get(edge.v));
+//                
+//                if(edge1.distance+edge.distance+edge2.distance>distanceMax){
+//                    preprocessRecord.add(edgeIndex);
+//                    continue;
+//                }
+//                
+//            }
+            
+            
+            
+        }
+        
+        System.out.println("||-----------------------Preprocess----------------------------||");
+        System.out.println("We have "+edgeSet.size()+" initial edges in the network");
+        System.out.println("After preprocessing, there are "+(edgeSet.size()-preprocessRecord.size())+" edges left in the network.");
+        
+        for(int edgeIndex:preprocessRecord){
+            edgeSet.remove(edgeIndex);
+        }
         
     }
 
 
     public static void main(String[] args) throws IOException {
         GVRP gvrp = new GVRP("./data/A/input_node.xlsx", "./data/A/input_vehicle_type.xlsx", "./data/A/input_distance-time.txt");
+        gvrp.preprocess();
 
     }
 
