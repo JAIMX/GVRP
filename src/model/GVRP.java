@@ -23,27 +23,13 @@ import org.apache.poi.ss.usermodel.Row;
 public class GVRP {
 
     public int time0;
-    public Depot depot;
-    public Map<Integer,Demand> demandSet;
-    public Map<Integer,RechargeStation> rechargeStationSet;
-    public List<vehicle> vehicleSet;
+    public List<vehicle> vehicleList;
+    public List<Node> nodeList;
     public Map<Integer,Edge> edgeSet;
-
-    public class Depot {
-        private double longitude, latitude;
-        private int t1, t2;
-    }
-
-    public class Demand {
-        private double longitude, latitude, weight, volume;
-        private int t1, t2;
-        private int index;
-    }
-
-    public class RechargeStation {
-        private double longitude, latitude;
-        private int index;
-    }
+    
+    public double weightMax,volumeMax;
+    public int distanceMax;
+    
 
     public class vehicle {
         private int index, drivingRange, vehicleFixedCost, chargeTime;
@@ -52,14 +38,19 @@ public class GVRP {
 
     }
     
+    public class Node{
+        private double longitude, latitude, weight, volume;
+        private int t1,t2;
+        private int typeIndex,index;
+    }
+    
     public class Edge{
         private int index,u,v,distance,spendTime;
     }
 
     public GVRP(String nodeFileName, String vehicleTypeFileName, String distanceTimeFileName) throws IOException {
-        demandSet = new HashMap<>();
-        rechargeStationSet = new HashMap<>();
-        vehicleSet=new ArrayList<>();
+        vehicleList=new ArrayList<>();
+        nodeList=new ArrayList<>();
         edgeSet=new HashMap<>();
         
         readNodeFile(nodeFileName);
@@ -85,67 +76,72 @@ public class GVRP {
             cell = cellIterator.next();
             int type = (int) cell.getNumericCellValue();
 
+            Node node=new Node();
+            node.index=index;
+            node.typeIndex=type;
+            
             // depot
             if (type == 1) {
-                this.depot = new Depot();
                 cell = cellIterator.next();
-                depot.longitude = cell.getNumericCellValue();
+                node.longitude = cell.getNumericCellValue();
                 cell = cellIterator.next();
-                depot.latitude = cell.getNumericCellValue();
+                node.latitude = cell.getNumericCellValue();
 
                 cellIterator.next();
                 cellIterator.next();
                 cell = cellIterator.next();
 
                 this.time0 = (int) (cell.getNumericCellValue() * 24 * 60);
-                depot.t1 = 0;
+                node.t1 = 0;
                 cell = cellIterator.next();
-                depot.t2 = (int) cell.getNumericCellValue() * 24 * 60 - time0;
+                node.t2 = (int) cell.getNumericCellValue() * 24 * 60 - time0;
 
             }
 
             // demand
             if (type == 2) {
-                Demand demand = new Demand();
-                demand.index = index;
                 cell = cellIterator.next();
-                demand.longitude = cell.getNumericCellValue();
+                node.longitude = cell.getNumericCellValue();
                 cell = cellIterator.next();
-                demand.latitude = cell.getNumericCellValue();
+                node.latitude = cell.getNumericCellValue();
 
                 cell = cellIterator.next();
-                demand.weight = cell.getNumericCellValue();
+                node.weight = cell.getNumericCellValue();
                 cell = cellIterator.next();
-                demand.volume = cell.getNumericCellValue();
+                node.volume = cell.getNumericCellValue();
                 cell = cellIterator.next();
 
                 // demand.t1=timeTransfer(cell.getStringCellValue())-time0;
-                demand.t1 = (int) (cell.getNumericCellValue() * 24 * 60 - time0);
-                demand.t1 = Math.max(demand.t1, 0);
+                node.t1 = (int) (cell.getNumericCellValue() * 24 * 60 - time0);
+                node.t1 = Math.max(node.t1, 0);
 
                 cell = cellIterator.next();
-                demand.t2 = (int) (cell.getNumericCellValue() * 24 * 60 - time0);
+                node.t2 = (int) (cell.getNumericCellValue() * 24 * 60 - time0);
 
-                demandSet.put(demand.index,demand);
             }
 
             // recharge station
             if (type == 3) {
-                RechargeStation rechargeStation = new RechargeStation();
-                rechargeStation.index = index;
                 cell = cellIterator.next();
-                rechargeStation.longitude = cell.getNumericCellValue();
+                node.longitude = cell.getNumericCellValue();
                 cell = cellIterator.next();
-                rechargeStation.latitude = cell.getNumericCellValue();
-
-                rechargeStationSet.put(rechargeStation.index,rechargeStation);
+                node.latitude = cell.getNumericCellValue();
             }
-
+            
+            nodeList.add(node);
         }
+        
+
 
     }
 
     public void readVehicleTypeFile(String vehicleTypeFileName) throws IOException {
+        
+        this.weightMax=Double.MIN_VALUE;
+        this.volumeMax=Double.MIN_VALUE;
+        this.distanceMax=Integer.MIN_VALUE;
+        
+        
         FileInputStream file = new FileInputStream(new File(vehicleTypeFileName));
 
         XSSFWorkbook workbook = new XSSFWorkbook(file);
@@ -166,13 +162,16 @@ public class GVRP {
             
             cell=cellIterator.next();
             vehicle.volume=cell.getNumericCellValue();
+            this.volumeMax=Math.max(this.volumeMax, vehicle.volume);
             
             cell=cellIterator.next();
             vehicle.weight=cell.getNumericCellValue();
+            this.weightMax=Math.max(this.weightMax, vehicle.weight);
             
             cell=cellIterator.next();
             cell=cellIterator.next();
             vehicle.drivingRange=(int) cell.getNumericCellValue();
+            this.distanceMax=Math.max(this.distanceMax, vehicle.drivingRange);
             
             cell=cellIterator.next();
             vehicle.chargeTime=(int) (cell.getNumericCellValue()*60);
@@ -183,7 +182,7 @@ public class GVRP {
             cell=cellIterator.next();
             vehicle.vehicleFixedCost=(int) cell.getNumericCellValue();
             
-            vehicleSet.add(vehicle);
+            vehicleList.add(vehicle);
             
         }
     }
@@ -206,7 +205,10 @@ public class GVRP {
 //            System.out.println(edge.u+"->"+edge.v+" "+edge.distance+" "+edge.spendTime);
             edgeSet.put(index, edge);
         }
-        System.out.println(edgeSet.size());
+        
+    }
+    
+    public void preprocess(){
         
     }
 
