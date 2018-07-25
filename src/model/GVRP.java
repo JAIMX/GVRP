@@ -44,9 +44,9 @@ public class GVRP {
     }
     
     public class Node{
-        private double longitude, latitude, weight, volume;
-        private int t1,t2;
-        private int typeIndex,index;
+        public double longitude, latitude, weight, volume;
+        public int t1,t2;
+        public int typeIndex,index;
     }
     
     public class Edge{
