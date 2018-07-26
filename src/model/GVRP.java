@@ -24,7 +24,7 @@ import org.apache.poi.ss.usermodel.Row;
 
 public class GVRP {
 
-    public int time0,numOfDemand;
+    public int time0,numOfDemand,numOfVehicleType;
     public List<vehicle> vehicleList;
     public List<Node> nodeList;
     public Map<Integer,Edge> edgeSet;
@@ -199,6 +199,8 @@ public class GVRP {
             vehicleList.add(vehicle);
             
         }
+        
+        numOfVehicleType=vehicleList.size();
     }
 
     public void readDistanceTimeFile(String distanceTimeFileName) throws IOException {

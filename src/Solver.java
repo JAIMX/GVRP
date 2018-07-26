@@ -6,6 +6,7 @@ import java.util.PriorityQueue;
 
 import model.GVRP;
 import model.GVRP.Node;
+import route.Route;
 
 public class Solver {
     GVRP modelData;
@@ -73,9 +74,10 @@ public class Solver {
         for (Node node : modelData.nodeList) {
         	if(node.typeIndex==2) {
                 Vector vectorNode = new Vector(node.latitude - depot.latitude, node.longitude - depot.longitude);
+                
                 double cosValue = (vectorNode.x * vector0.x + vectorNode.y * vector0.y)
                         / (Math.sqrt(Math.pow(vectorNode.x, 2) + Math.pow(vectorNode.y, 2))
-                                + Math.sqrt(Math.pow(vector0.x, 2) + Math.pow(vector0.y, 2)));
+                                *Math.sqrt(Math.pow(vector0.x, 2) + Math.pow(vector0.y, 2)));
                 cos[node.index]=cosValue;
                 
                 
@@ -89,6 +91,9 @@ public class Solver {
         	}
         }
         
+//        System.out.println(queue1.size());
+//        System.out.println(queue2.size());
+//        
 //        while(!queue1.isEmpty()) {
 //        	Node tempNode=queue1.poll();
 //        	System.out.println(cos[tempNode.index]);
@@ -113,7 +118,24 @@ public class Solver {
         
         
         //we will initialize a feasible answer based on the sort of  visitList for demands
+        List<List<Route>> routeList=new ArrayList<>();// for nodes combination<for different vehicle types>
         
+        List<Route> route0=new ArrayList<>();
+        for(int i=0;i<modelData.numOfVehicleType;i++){
+            Route route=new Route(i+1);
+            route0.add(route);
+        }
+        routeList.add(route0);
+        
+        for(int demandIndex:visitList){
+            Node demand=modelData.nodeList.get(demandIndex);
+            
+            double minimalCost=Double.MAX_VALUE;
+            boolean ifCanInsert=false;
+            int insertRouteIndexRecord=-1;
+            int insertVehicleTypeIndexRecord=-1;
+        }
+
         
         
         
