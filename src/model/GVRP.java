@@ -63,7 +63,7 @@ public class GVRP {
         
         readNodeFile(nodeFileName);
         readVehicleTypeFile(vehicleTypeFileName);
-        readDistanceTimeFile(distanceTimeFileName);
+//        readDistanceTimeFile(distanceTimeFileName);
 
     }
 
@@ -315,7 +315,7 @@ public class GVRP {
 
     public static void main(String[] args) throws IOException {
         GVRP gvrp = new GVRP("./data/A/input_node.xlsx", "./data/A/input_vehicle_type.xlsx", "./data/A/input_distance-time.txt");
-        gvrp.preprocess();
+//        gvrp.preprocess();
 
     }
 
