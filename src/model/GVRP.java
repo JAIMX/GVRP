@@ -37,9 +37,9 @@ public class GVRP {
     
 
     public class vehicle {
-        private int index, drivingRange, vehicleFixedCost, chargeTime;
-        private String name;
-        private double volume, weight, unitTransCost;
+        public int index, drivingRange, vehicleFixedCost, chargeTime;
+        public String name;
+        public double volume, weight, unitTransCost;
 
     }
     
@@ -50,7 +50,7 @@ public class GVRP {
     }
     
     public class Edge{
-        private int index,u,v,distance,spendTime;
+        public int index,u,v,distance,spendTime;
     }
 
     public GVRP(String nodeFileName, String vehicleTypeFileName, String distanceTimeFileName) throws IOException {
