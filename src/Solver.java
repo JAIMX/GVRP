@@ -125,6 +125,8 @@ public class Solver {
 
         int count=0;
         for (int demandIndex : visitList) {
+        	
+
             count++;
             System.out.println("#"+count);
             System.out.println(demandIndex);
@@ -167,7 +169,13 @@ public class Solver {
                 for(int i=0;i<modelData.numOfVehicleType;i++){
                     Route route=new Route(i+1,modelData);
                     route.tryInsert(demand);
-                    route=route.bestTryInsertRoute;
+                    
+                    if(route.bestTryInsertRoute!=null) {
+                        route=route.bestTryInsertRoute;
+                    }else {
+                    	route.isFailed=true;
+                    }
+
                     route0.add(route);
                 }
                 routeList.add(route0);
@@ -184,6 +192,24 @@ public class Solver {
                 }
                 
             }
+            
+            
+            
+            
+            
+            
+        	//check for null object in routeList
+        	for(int i=0;i<routeList.size();i++) {
+        		List<Route> routesForVehicle=routeList.get(i);
+        		for(int j=0;j<routesForVehicle.size();j++) {
+        			if(routesForVehicle.get(j)==null) {
+        				System.out.println("Error accurs!!!");
+        				System.out.println("demandIndex="+demandIndex);
+        				System.out.println("i="+i);
+        				System.out.println("j="+j);
+        			}
+        		}
+        	}
             
             
 
