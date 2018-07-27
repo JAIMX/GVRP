@@ -232,9 +232,27 @@ public class GVRP {
         }
         
         //calculate nearestRechargeStation
+//        Map<Integer,Integer> nearestRecord=new HashMap<>();
+//        for(int i=0;i<numOfDemand;i++){
+//            nearestRecord.put(i+1, Integer.MAX_VALUE);
+//        }
+//        
+//        for(int edgeIndex:edgeSet.keySet()){
+//            Edge edge=edgeSet.get(edgeIndex);
+//            Node u=nodeList.get(edge.u);
+//            Node v=nodeList.get(edge.v);
+//            
+//            if(u.typeIndex==2&&v.typeIndex!=2){
+//                if(edge.distance<nearestRecord.get(edge.u)){
+//                    nearestRechargeStation.put(edge.u, edgeIndex);
+//                    nearestRecord.put(edge.u,edge.distance);
+//                }
+//            }
+//        }
+        
         Map<Integer,Integer> nearestRecord=new HashMap<>();
-        for(int i=0;i<numOfDemand;i++){
-            nearestRecord.put(i+1, Integer.MAX_VALUE);
+        for(int i=0;i<nodeList.size();i++){
+            nearestRecord.put(i, Integer.MAX_VALUE);
         }
         
         for(int edgeIndex:edgeSet.keySet()){
@@ -242,19 +260,15 @@ public class GVRP {
             Node u=nodeList.get(edge.u);
             Node v=nodeList.get(edge.v);
             
-            if(u.typeIndex==2&&v.typeIndex!=2){
+            if(v.typeIndex==3){
                 if(edge.distance<nearestRecord.get(edge.u)){
                     nearestRechargeStation.put(edge.u, edgeIndex);
                     nearestRecord.put(edge.u,edge.distance);
                 }
             }
+            
         }
         
-        
-        
-//        //check edgeForNode
-//        Map temp=edgeForNode.get(1);
-//        System.out.println(temp.toString());
         
         
     }

@@ -116,39 +116,112 @@ public class Solver {
                                                         // combination<for
                                                         // different vehicle
                                                         // types>
-        List<Route> route0 = new ArrayList<>();
+        List<Route> route0 = new ArrayList<Route>();
         for (int i = 0; i < modelData.numOfVehicleType; i++) {
             Route route = new Route(i + 1, modelData);
             route0.add(route);
         }
         routeList.add(route0);
 
+        int count=0;
         for (int demandIndex : visitList) {
+            count++;
+            System.out.println("#"+count);
+            System.out.println(demandIndex);
+            System.out.println(routeList.size());
+            System.out.println();
 
+            int listIndexRecord=-1;
+            double minObjRecord=Double.MAX_VALUE;
+            
             Node demand = modelData.nodeList.get(demandIndex);
+            for (int i=0;i<routeList.size();i++ ) {
+                List<Route> routesForVehicle = routeList.get(i);
+                
+//                System.out.println("i= "+i);
+                for (int j=0;j<routesForVehicle.size();j++) {
+                    Route route = routesForVehicle.get(j);
+                    
+//                    System.out.println("j="+j);
+                    if(route.isFailed==false){
+                        route.tryInsert(demand);
+                        
+                        if(route.ifCanInsert){
+                            if(minObjRecord>(route.bestTryInsertRoute.totalCost-route.totalCost)){
+                                minObjRecord=route.bestTryInsertRoute.totalCost-route.totalCost;
+                                listIndexRecord=i;
+                            }
+                        }
+                    }
 
-//            double minimalCost = Double.MAX_VALUE;
-//            boolean ifCanInsert = false;
-//            int insertBestRouteIndexRecord = -1;
-//            int insertBestVehicleTypeIndexRecord = -1;
-//            int insertBestPositionRecord = -1;
+                    
 
-            for (List<Route> routesForVehicle : routeList) {
-                for (Route route : routesForVehicle) {
-                    route.tryInsert(demand);
                 }
+                
+            }
+            
+            
+            //if can not find a place to insert, we add a new route to routeList and try to insert demand
+            if(listIndexRecord<0){
+                route0=new ArrayList<>();
+                for(int i=0;i<modelData.numOfVehicleType;i++){
+                    Route route=new Route(i+1,modelData);
+                    route.tryInsert(demand);
+                    route=route.bestTryInsertRoute;
+                    route0.add(route);
+                }
+                routeList.add(route0);
+            }else{ // if we find a place to insert, change the route for all vehicles, is some one fails, we drop this vehicle type
+                List<Route> routesForVehicle=routeList.get(listIndexRecord);
+                for(int i=0;i<routesForVehicle.size();i++){
+                    Route route=routesForVehicle.get(i);
+                    if(route.ifCanInsert){
+//                        route=route.bestTryInsertRoute;
+                        routesForVehicle.set(i, route.bestTryInsertRoute);
+                    }else{
+                        route.isFailed=true;
+                    }
+                }
+                
             }
             
             
 
         }
+        
+        
+        
+        List<Route> feasibleRouteList=new ArrayList<>();
+        
+        //we pick up one best route for each routesForVehicle
+        for(int i=0;i<routeList.size();i++){
+            List<Route> routesForVehicle=routeList.get(i);
+            
+            double minTotalCost=Double.MAX_VALUE;
+            Route routeRecord=null;
+            for(int j=0;j<routesForVehicle.size();j++){
+                Route route=routesForVehicle.get(j);
+                if(minTotalCost>route.totalCost){
+                    minTotalCost=route.totalCost;
+                    routeRecord=route;
+                }
+            }
+            
+            if(routeRecord!=null){
+                feasibleRouteList.add(routeRecord);
+            }
+        }
+        
+        System.out.println(feasibleRouteList.size());
+        
+        
 
     }
 
     public static void main(String[] args) throws IOException {
         GVRP gvrp = new GVRP("./data/A/input_node.xlsx", "./data/A/input_vehicle_type.xlsx",
                 "./data/A/input_distance-time.txt");
-        // gvrp.preprocess();
+        gvrp.preprocess();
         Solver solver = new Solver(gvrp);
         solver.initialize();
     }
