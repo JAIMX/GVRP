@@ -28,6 +28,7 @@ public class GVRP {
     public List<vehicle> vehicleList;
     public List<Node> nodeList;
     public Map<Integer,Edge> edgeSet;
+    public List<Map<Integer,Integer>> edgeForNode;
     public Set<Integer> preprocessRecord;
     
     public double weightMax,volumeMax;
@@ -57,13 +58,14 @@ public class GVRP {
         vehicleList=new ArrayList<>();
         nodeList=new ArrayList<>();
         edgeSet=new HashMap<>();
+        edgeForNode=new ArrayList<>();
         preprocessRecord=new HashSet<>();
         numOfDemand=0;
         nearestRechargeStation=new HashMap<>();
         
         readNodeFile(nodeFileName);
         readVehicleTypeFile(vehicleTypeFileName);
-//        readDistanceTimeFile(distanceTimeFileName);
+        readDistanceTimeFile(distanceTimeFileName);
 
     }
 
@@ -219,6 +221,14 @@ public class GVRP {
             edge.index=index;
             
             edgeSet.put(index, edge);
+            
+            if(edgeForNode.size()-1<edge.u){
+                Map temp=new HashMap<>();
+                temp.put(edge.v, edge.index);
+                edgeForNode.add(temp);
+            }else{
+                edgeForNode.get(edge.u).put(edge.v, edge.index);
+            }
         }
         
         //calculate nearestRechargeStation
@@ -241,6 +251,10 @@ public class GVRP {
         }
         
         
+        
+//        //check edgeForNode
+//        Map temp=edgeForNode.get(1);
+//        System.out.println(temp.toString());
         
         
     }
