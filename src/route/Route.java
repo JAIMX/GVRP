@@ -1,7 +1,10 @@
 package route;
 
 import java.io.CharConversionException;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +32,10 @@ public class Route {
     public int tryInsertDemandIndex;
     public boolean ifCanInsert;
     public Route bestTryInsertRoute;
+    
+    //for output information
+    public int leaveTime,backTime,totalRun,chargeAmount;
+    
 
     public Route(int vehicleTypeIndex, GVRP gvrp) {
         this.isFailed=false;
@@ -163,6 +170,51 @@ public class Route {
         return true;
     }
     
+    public void updateTimeWindow(int maxDelay){
+        
+        if(maxDelay>0){
+
+            int arriveTime=visitNodeTimeList.get(1);
+            
+            visitNodeTimeList=new LinkedList<>();
+            visitNodeTimeList.add(0);
+            
+//            visitNodeTimeList.set(1, arriveTime+maxDelay);
+            visitNodeTimeList.add(arriveTime+maxDelay);
+            totalWaitingTime=0;
+            
+            for(int i=2;i<visitNodeList.size();i++){
+                int u=visitNodeList.get(i-1);
+                int v=visitNodeList.get(i);
+                Node node=modelData.nodeList.get(v);
+                int edgeIndex=modelData.edgeForNode.get(u).get(v);
+                Edge edge=modelData.edgeSet.get(edgeIndex);
+                
+                arriveTime=Math.max(node.t1, visitNodeTimeList.get(i-1)+edge.spendTime+30);
+                visitNodeTimeList.add(arriveTime);
+                if(node.t1>visitNodeTimeList.get(i-1)+edge.spendTime+30){
+                    totalWaitingTime+=node.t1-(visitNodeTimeList.get(i-1)+edge.spendTime+30);
+                }
+                
+            }
+            
+            waitCost=24*totalWaitingTime/60.0;
+            this.totalCost=transCost+chargeCost+waitCost+fixedCost;
+            
+            
+        }
+        
+        //update leave time for depot
+        int u=visitNodeList.get(0);
+        int v=visitNodeList.get(1);
+        Node node=modelData.nodeList.get(v);
+        int edgeIndex=modelData.edgeForNode.get(u).get(v);
+        Edge edge=modelData.edgeSet.get(edgeIndex);
+        visitNodeTimeList.set(0, visitNodeTimeList.get(1)-edge.spendTime);
+        
+        
+    }
+    
     public boolean updateRechargeStation(Route route){
         
         boolean isFeasible=true;
@@ -265,7 +317,8 @@ public class Route {
                 
                 route.transCost=route.transCost*modelData.vehicleList.get(route.vehicleTypeIndex-1).unitTransCost/1000.0;
                 route.chargeCost=route.chargeCost*50;
-                route.waitCost=24*route.waitCost/60.0;
+//                route.waitCost=24*route.waitCost/60.0;
+                route.waitCost=24*route.totalWaitingTime/60.0;
                 route.totalCost=route.transCost+route.chargeCost+route.waitCost+route.fixedCost;
                 
             }else{
@@ -280,10 +333,78 @@ public class Route {
         
     }
     
-    
+    public void caluculateInfo(){
+        this.leaveTime=visitNodeTimeList.getFirst();
+        this.backTime=visitNodeTimeList.getLast();
+        
+        totalRun=0;
+        chargeAmount=0;
+        for(int i=1;i<visitNodeList.size();i++){
+            int u=visitNodeList.get(i-1);
+            int v=visitNodeList.get(i);
+            Node node=modelData.nodeList.get(v);
+            int edgeIndex=modelData.edgeForNode.get(u).get(v);
+            Edge edge=modelData.edgeSet.get(edgeIndex);
+            
+            
+            totalRun+=edge.distance;
+            
+            if(node.typeIndex==3){
+                chargeAmount++;
+            }
+            
+        }
+        
+        this.transCost=totalRun*modelData.vehicleList.get(vehicleTypeIndex-1).unitTransCost/1000.0;
+        this.chargeCost=chargeAmount*50;
+        
+        //calculate waiting cost
+        totalWaitingTime=0;
+        int u=visitNodeList.get(0);
+        int v=visitNodeList.get(1);
+        Node node=modelData.nodeList.get(v);
+        int edgeIndex=modelData.edgeForNode.get(u).get(v);
+        Edge edge=modelData.edgeSet.get(edgeIndex);
+        
+        int actualArriveTime=visitNodeTimeList.get(0)+edge.spendTime;
+        totalWaitingTime+=Math.max(0, node.t1-actualArriveTime);
+        int arriveTime=Math.max(node.t1, actualArriveTime);
+        
+        for(int i=2;i<visitNodeList.size();i++){
+            u=visitNodeList.get(i-1);
+            v=visitNodeList.get(i);
+            node=modelData.nodeList.get(v);
+            edgeIndex=modelData.edgeForNode.get(u).get(v);
+            edge=modelData.edgeSet.get(edgeIndex);
+            
+            actualArriveTime=arriveTime+edge.spendTime+30;
+            totalWaitingTime+=Math.max(0, node.t1-actualArriveTime);
+            arriveTime=Math.max(node.t1, actualArriveTime);
+        }
+        
+        this.waitCost=24*totalWaitingTime/60.0;
+        this.totalCost=transCost+chargeCost+waitCost+fixedCost;
+        
+    }
 
     public static void main(String[] args) throws IOException {
-
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new File("NewData.csv"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        StringBuilder builder = new StringBuilder();
+        String ColumnNamesList = "Id,Name";
+        // No need give the headers Like: id, Name on builder.append
+        builder.append(ColumnNamesList +"\n");
+        builder.append("1"+",");
+        builder.append("Chola");
+        builder.append('\n');
+        pw.write(builder.toString());
+        pw.close();
+        System.out.println("done!");
+        
         
     }
 

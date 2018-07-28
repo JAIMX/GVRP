@@ -1,0 +1,2 @@
+trans_code,vehicle_type,dist_seq,distribute_lea_tm,distribute_arr_tm,distance,trans_cost,charge_cost,wait_cost,fixed_use_cost,total_cost,charge_cnt
+DP000i,1,0;938;179;1010;1;762;551;1039;346;0,501992,201433,2417.196,100.0,2.8,200.0,2719.996,2
