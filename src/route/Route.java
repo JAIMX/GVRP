@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -388,22 +390,19 @@ public class Route {
     }
 
     public static void main(String[] args) throws IOException {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File("NewData.csv"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        StringBuilder builder = new StringBuilder();
-        String ColumnNamesList = "Id,Name";
-        // No need give the headers Like: id, Name on builder.append
-        builder.append(ColumnNamesList +"\n");
-        builder.append("1"+",");
-        builder.append("Chola");
-        builder.append('\n');
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+//    	java.text.DecimalFormat   df   =new   java.text.DecimalFormat("#.00");
+//    	double number=4.347;
+//    	System.out.println(number);
+//    	
+//    	number=Double.valueOf(df.format(number));
+//    	System.out.println(number);
+    	
+    	double   f   =   111231.5;
+    	BigDecimal   b   =   new   BigDecimal(f);
+    	double   f1   =   b.setScale(2,   RoundingMode.HALF_UP).doubleValue();
+    	System.out.println(f1);
+
+
         
         
     }

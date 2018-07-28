@@ -2,6 +2,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -248,20 +250,21 @@ public class Solver {
         StringBuilder builder = new StringBuilder();
         String ColumnNamesList = "trans_code,vehicle_type,dist_seq,distribute_lea_tm,distribute_arr_tm,distance,trans_cost,charge_cost,wait_cost,fixed_use_cost,total_cost,charge_cnt";
         builder.append(ColumnNamesList +"\n");
-        for(int i=0;i<1;i++){
+        for(int i=0;i<feasibleRouteList.size();i++){
             Route route=feasibleRouteList.get(i);
             
-            if(i<10){
+            if(i+1<10){
                 builder.append("DP000");
-            }else if (i<100) {
+            }else if (i+1<100) {
                 builder.append("DP00");
-            }else if (i<1000) {
+            }else if (i+1<1000) {
                 builder.append("DP0");
             }else{
                 builder.append("DP");
             }
             
-            builder.append("i"+","+route.vehicleTypeIndex+",");
+            int index=i+1;
+            builder.append(index+","+route.vehicleTypeIndex+",");
             
             //node list
             for(int j=0;j<route.visitNodeList.size();j++){
@@ -272,8 +275,25 @@ public class Solver {
                     builder.append(";"+nodeIndex);
                 }
             }
-            builder.append(","+(route.leaveTime+modelData.time0)+(route.backTime+modelData.time0));
-            builder.append(","+route.totalRun+","+route.transCost+","+route.chargeCost+","+route.waitCost+","+route.fixedCost+","+route.totalCost+","+route.chargeAmount);
+            
+            int leaveTime=(route.leaveTime+modelData.time0);
+            int backTime=(route.backTime+modelData.time0);
+            String leaveTimeString=(leaveTime/60)+":"+(leaveTime%60);
+            String backTimeString=(backTime/60)+":"+(backTime%60);
+
+            BigDecimal df=new BigDecimal(route.transCost);
+            double transCost=df.setScale(2, RoundingMode.HALF_UP).doubleValue();
+            
+            df=new BigDecimal(route.waitCost);
+            double waitCost=df.setScale(2, RoundingMode.HALF_UP).doubleValue();
+            
+            df=new BigDecimal(route.totalCost);
+            double totalCost=df.setScale(2, RoundingMode.HALF_UP).doubleValue();
+            
+            
+            builder.append(","+leaveTimeString+","+backTimeString);
+//            builder.append(","+route.totalRun+","+route.transCost+","+route.chargeCost+","+route.waitCost+","+route.fixedCost+","+route.totalCost+","+route.chargeAmount);
+            builder.append(","+route.totalRun+","+transCost+","+(int)route.chargeCost+","+waitCost+","+(int)route.fixedCost+","+totalCost+","+route.chargeAmount);
             builder.append('\n');
 
         }
